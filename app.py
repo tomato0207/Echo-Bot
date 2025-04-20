@@ -102,7 +102,7 @@ def message_text(event):
                 )
             )
         elif text == '音訊':
-            url = request.url_root + '/static/mysic.mp3'
+            url = request.url_root.rstrip('/') + '/static/mysic.mp3'
             url = url.replace("http://", "https://") 
             app.logger.info("url="+url)
             duration = 50000
