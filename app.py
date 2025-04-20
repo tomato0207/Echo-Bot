@@ -78,7 +78,7 @@ def message_text(event):
                 )
             )
         elif text == '圖片':
-            url = request.url_root.rstrip('/') + '/static/head.png'
+            url = request.url_root + '/static/head.png'
             url = url.replace("http:", "https:") 
             app.logger.info("url="+url)
             line_bot_api.reply_message(
@@ -90,8 +90,8 @@ def message_text(event):
                 )
             )
         elif text == '影片':
-            url = request.url_root.rstrip('/') + '/static/head.png'
-            url = url.replace("http://", "https://") 
+            url = request.url_root + '/static/video.mp4'
+            url = url.replace("http:", "https:")
             app.logger.info("url="+url)
             line_bot_api.reply_message(
                 ReplyMessageRequest(
@@ -102,8 +102,8 @@ def message_text(event):
                 )
             )
         elif text == '音訊':
-            url = request.url_root.rstrip('/') + '/static/mysic.mp3'
-            url = url.replace("http://", "https://") 
+            url = request.url_root + '/static/music.mp3'
+            url = url.replace("http:", "https:")
             app.logger.info("url="+url)
             duration = 50000
             line_bot_api.reply_message(
@@ -143,7 +143,7 @@ def message_text(event):
             )
         elif text == '按鈕':
             url = request.url_root + '/static/head.png'
-            url = url.replace("http://", "https://") 
+            url = url.replace("http:", "https:") 
             app.logger.info("url="+url)
             buttons_template = ButtonsTemplate(
                 thumbnail_image_url=url,
@@ -167,7 +167,7 @@ def message_text(event):
             )
         elif text == '社群':
             url = request.url_root + '/static'
-            url = url.replace("http://", "https://") 
+            url = url.replace("http:", "https:")
             app.logger.info("url="+url)
             image_carousel_template = ImageCarouselTemplate(
                 columns=[
