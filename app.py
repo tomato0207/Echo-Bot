@@ -1,4 +1,4 @@
-from flask import Flask, request, abort, send_from_directory
+from flask import Flask, request, abort
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import (
@@ -36,9 +36,9 @@ import os
 app = Flask(__name__)
 
 configuration = Configuration(access_token=os.getenv('CHANNEL_ACCESS_TOKEN'))
-line_handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
+handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
 
-@line_handler.add(MessageEvent, message=TextMessageContent)
+@handler.add(MessageEvent, message=TextMessageContent)
 def message_text(event):
     text = event.message.text  # 取得使用者輸入的文字
     with ApiClient(configuration) as api_client:
@@ -79,7 +79,7 @@ def message_text(event):
             )
         elif text == '圖片':
             url = request.url_root + '/static/head.png'
-            url = url.replace("http://", "https://") 
+            url = url.replace("http","https")
             app.logger.info("url="+url)
             line_bot_api.reply_message(
                 ReplyMessageRequest(
@@ -90,8 +90,8 @@ def message_text(event):
                 )
             )
         elif text == '影片':
-            url = request.url_root.rstrip('/') + '/static/head.png'
-            url = url.replace("http://", "https://") 
+            url = request.url_root + '/static/video.mp4'
+            url = url.replace("http","https")
             app.logger.info("url="+url)
             line_bot_api.reply_message(
                 ReplyMessageRequest(
@@ -102,8 +102,8 @@ def message_text(event):
                 )
             )
         elif text == '音訊':
-            url = request.url_root.rstrip('/') + '/static/mysic.mp3'
-            url = url.replace("http://", "https://") 
+            url = request.url_root + '/static/music.mp3'
+            url = url.replace("http","https")
             app.logger.info("url="+url)
             duration = 50000
             line_bot_api.reply_message(
@@ -143,7 +143,7 @@ def message_text(event):
             )
         elif text == '按鈕':
             url = request.url_root + '/static/head.png'
-            url = url.replace("http://", "https://") 
+            url= url.replace("http","https")
             app.logger.info("url="+url)
             buttons_template = ButtonsTemplate(
                 thumbnail_image_url=url,
@@ -166,8 +166,8 @@ def message_text(event):
                 )
             )
         elif text == '社群':
-            url = request.url_root + '/static'
-            url = url.replace("http://", "https://") 
+            url = request.url_root+'/static'
+            url = url.replace("http","https")
             app.logger.info("url="+url)
             image_carousel_template = ImageCarouselTemplate(
                 columns=[
@@ -204,10 +204,6 @@ def message_text(event):
                 reply_token=event.reply_token,
                 messages=[image_carousel_message]
             ))
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    return send_from_directory(os.path.join(app.root_path, 'static'), filename)
-
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
@@ -215,14 +211,14 @@ def callback():
     app.logger.info("Request body: " + body)
 
     try:
-        line_handler.handle(body, signature)
+        handler.handle(body, signature)
     except InvalidSignatureError:
         app.logger.info("Invalid signature. Please check your channel access token/channel secret.")
         abort(400)
 
     return 'OK'
 
-@line_handler.add(FollowEvent)
+@handler.add(FollowEvent)
 def handle_follow(event):
     print(f'Got {event.type} event')
 
