@@ -34,7 +34,6 @@ from linebot.v3.webhooks import (
 import os
 from dotenv import load_dotenv
 load_dotenv()
-
 app = Flask(__name__)
 
 configuration = Configuration(access_token=os.getenv('CHANNEL_ACCESS_TOKEN'))
@@ -80,8 +79,8 @@ def message_text(event):
                 )
             )
         elif text == '圖片':
-            url = request.url_root + '/static/head.png'
-            url = url.replace("http","https")
+            url = request.url_root + '/static'
+            url = url.replace("http://", "https://") 
             app.logger.info("url="+url)
             line_bot_api.reply_message(
                 ReplyMessageRequest(
