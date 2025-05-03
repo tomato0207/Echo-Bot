@@ -1,6 +1,7 @@
 from flask import Flask, request, abort, send_from_directory
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
+import requests
 from linebot.v3.messaging import (
     MessagingApi,
     Configuration,
@@ -37,7 +38,15 @@ app = Flask(__name__)
 
 configuration = Configuration(access_token=os.getenv('CHANNEL_ACCESS_TOKEN'))
 line_handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
-
+station_map = {
+            '臺北天氣': '臺北',
+            '臺中天氣': '臺中',
+            '嘉義天氣': '嘉義',
+            '高雄天氣': '高雄',
+            '臺東天氣': '臺東',
+            '桃園天氣': '新屋',
+            '苗栗天氣': '後龍',
+        }
 @line_handler.add(MessageEvent, message=TextMessageContent)
 def message_text(event):
     text = event.message.text  # 取得使用者輸入的文字
@@ -51,8 +60,49 @@ def message_text(event):
                     messages=[TextMessage(text="目前實作指令:\n嗨\n表情符號\n貼圖\n圖片\n影片\n音訊\n位置\n確認\n按鈕\n社群")]
                 )
             )
+        
+        elif text in station_map:
+            station_name = station_map[text]
+            url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001"
+            params = {
+                "Authorization": (os.getenv('AUTHORIZATIONCODE')),
+                "StationId": "466920,467280,467490,467441,467480,467660,467050",
+                "WeatherElement": "Weather,AirTemperature,WindSpeed,Now",
+                "GeoInfo": ""
+            }
+            try:
+                response = requests.get(url, params=params)
+                data = response.json()
+                stations = data["records"]["Station"]
+                station = next((s for s in stations if s["StationName"] == station_name), None)
+                if station:
+                    weather = station["WeatherElement"].get("Weather", "無資料")
+                    temperature = station["WeatherElement"].get("AirTemperature", "無資料")
+                    wind = station["WeatherElement"].get("WindSpeed", "無資料")
+                    rain = station["WeatherElement"].get("Now", {}).get("Precipitation", "無資料")
+                    time = station["ObsTime"]["DateTime"]
+                    location = station["GeoInfo"]["CountyName"] + station["GeoInfo"]["TownName"]
 
-        if text == '嗨':
+                    reply = (
+                            f"📍 {station_name}即時天氣（{time}）\n"
+                            f"地點：{location}\n"
+                            f"天氣：{weather}\n"
+                            f"氣溫：{temperature}°C\n"
+                            f"風速：{wind} m/s\n"
+                            f"降雨量：{rain} mm"
+                        )
+                else:
+                    reply = f"找不到 {station_name} 測站資料。"
+            except Exception as e:
+                reply = f"氣象資料取得失敗：{str(e)}"
+
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=reply)]
+                )
+            )
+        elif text == '嗨':
             line_bot_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
@@ -78,7 +128,7 @@ def message_text(event):
                 )
             )
         elif text == '圖片':
-            url = request.url_root + 'static/head.png'
+            url = request.url_root + '/static/head.png'
             url = url.replace("http:", "https:") 
             app.logger.info("url="+url)
             line_bot_api.reply_message(
